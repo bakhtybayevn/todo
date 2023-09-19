@@ -49,6 +49,7 @@ type (
 		ID        bson.ObjectId `bson:"_id,omitempty"`
 		Title     string        `bson:"title"`
 		Completed bool          `bson:"completed"`
+		Deadline  time.Time     `bson:"deadline"`
 		CreatedAt time.Time     `bson:"createAt"`
 	}
 
@@ -56,6 +57,7 @@ type (
 		ID        string    `json:"id"`
 		Title     string    `json:"title" validate:"required"`
 		Completed bool      `json:"completed"`
+		Deadline  time.Time `json:"deadline"`
 		CreatedAt time.Time `json:"created_at"`
 	}
 )
@@ -120,6 +122,7 @@ func createTodo(w http.ResponseWriter, r *http.Request) {
 		ID:        bson.NewObjectId(),
 		Title:     t.Title,
 		Completed: false,
+		Deadline:  t.Deadline, // Include the deadline
 		CreatedAt: time.Now(),
 	}
 	if err := db.C(collectionName).Insert(&tm); err != nil {
@@ -157,7 +160,7 @@ func updateTodo(w http.ResponseWriter, r *http.Request) {
 	if err := db.C(collectionName).
 		Update(
 			bson.M{"_id": bson.ObjectIdHex(id)},
-			bson.M{"title": t.Title, "completed": t.Completed},
+			bson.M{"title": t.Title, "completed": t.Completed, "deadline": t.Deadline},
 		); err != nil {
 		renderError(w, http.StatusProcessing, "Failed to update todo", err)
 		return
@@ -184,6 +187,7 @@ func fetchTodos(w http.ResponseWriter, r *http.Request) {
 			ID:        t.ID.Hex(),
 			Title:     t.Title,
 			Completed: t.Completed,
+			Deadline:  t.Deadline, // Include the deadline
 			CreatedAt: t.CreatedAt,
 		})
 	}

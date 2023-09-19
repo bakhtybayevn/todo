@@ -92,7 +92,8 @@
                             :class="{ 'checked': todo.completed, 'not-checked': !todo.completed }"
                             v-for="(todo, todoIndex) in todos" v-on:click="toggleTodo(todo, todoIndex)">
                             <i :class="{'fa fa-circle': !todo.completed, 'fa fa-check-circle text-success': todo.completed }">&nbsp;</i>
-                            <span :class="{ 'del': todo.completed }">@{ todo.title }</span>
+                            <span :class="{ 'del': todo.completed }">@{{ todo.title }}</span>
+                            <span class="float-right">@{{ formatDate(todo.deadline) }}</span> <!-- Display deadline -->
                             <div class="btn-group float-right" role="group" aria-label="Basic example">
                                 <button type="button" class="btn btn-success btn-sm custom-button"
                                         v-on:click.prevent.stop v-on:click="editTodo(todo, todoIndex)"><span
@@ -126,7 +127,7 @@
         data: {
             showError: false,
             enableEdit: false,
-            todo: {id: '', title: '', completed: false},
+            todo: {id: '', title: '', completed: false, deadline: ''},
             todos: []
         },
         mounted() {
@@ -146,17 +147,18 @@
                                 this.todos[this.todo.todoIndex] = this.todo;
                             }
                         });
-                        this.todo = {id: '', title: '', completed: false};
+                        this.todo = {id: '', title: '', completed: false, deadline: ''};
                         this.enableEdit = false;
                     } else {
-                        this.$http.post('todo', {title: this.todo.title}).then(response => {
+                        this.$http.post('todo', this.todo).then(response => {
                             if (response.status == 201) {
                                 this.todos.push({
                                     id: response.body.todo_id,
                                     title: this.todo.title,
-                                    completed: false
+                                    completed: false,
+                                    deadline: this.todo.deadline
                                 });
-                                this.todo = {id: '', title: '', completed: false};
+                                this.todo = {id: '', title: '', completed: false, deadline: ''};
                             }
                         });
                     }
@@ -174,7 +176,12 @@
                 } else {
                     completedToggle = true;
                 }
-                this.$http.put('todo/' + todo.id, {id: todo.id, title: todo.title, completed: completedToggle}).then(response => {
+                this.$http.put('todo/' + todo.id, {
+                    id: todo.id,
+                    title: todo.title,
+                    completed: completedToggle,
+                    deadline: todo.deadline
+                }).then(response => {
                     if (response.status == 200) {
                         this.todos[todoIndex].completed = completedToggle;
                     }
@@ -190,10 +197,17 @@
                     this.$http.delete('todo/' + todo.id).then(response => {
                         if (response.status == 200) {
                             this.todos.splice(todoIndex, 1);
-                            this.todo = {id: '', title: '', completed: false};
+                            this.todo = {id: '', title: '', completed: false, deadline: ''};
                         }
                     });
                 }
+            },
+            formatDate(dateString) {
+                if (dateString) {
+                    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                    return new Date(dateString).toLocaleDateString(undefined, options);
+                }
+                return '';
             }
         }
     });
